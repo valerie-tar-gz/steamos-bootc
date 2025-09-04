@@ -1,4 +1,4 @@
-FROM ghcr.io/steamdeckhomebrew/holo-base:latest
+FROM ghcr.io/valerie-tar-gz/holo-docker-complete:latest
 
 COPY ./packages /packages
 
@@ -23,7 +23,7 @@ RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
         --infodir=/usr/share/info \
         --localstatedir=/var \
         --disable-silent-rules \
-        --enable-gtk-doc \
+        --disable-gtk-doc \
         --with-curl \
         --with-openssl \
         --without-soup \
@@ -84,32 +84,7 @@ RUN pacman -Sy --noconfirm \
   fastfetch \
   networkmanager \
   shadow \
-  micro \
-  sddm \
-  sddm-kcm \
-  steamdeck-kde-presets \
-  plasma-activities \
-  plasma-activities-stats \
-  plasma-browser-integration \
-  plasma-desktop \
-  plasma-disks \
-  plasma-firewall \
-  plasma-integration \
-  plasma-meta \
-  plasma-nm \
-  plasma-pa \
-  plasma-remotecontrollers \
-  plasma-systemmonitor \
-  plasma-thunderbolt \
-  plasma-vault \
-  plasma-wayland-protocols \
-  plasma-welcome \
-  plasma-workspace \
-  plasma-workspace-wallpapers \
-  plasma5support \
-  konsole \
-  dolphin \
-  firefox &&\
+  micro && \
   pacman -S --clean --clean && \
   rm -rf /var/cache/pacman/pkg/*
 
