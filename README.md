@@ -1,15 +1,14 @@
-# Arch Linux Bootc
+# SteamOS Holo Bootc
 
-Experiment to see if Bootc could work on Arch Linux. And it does! With the composefs-backend :)
+An extension on top of Tulip's experiments on Arch Linux and SteamDeckHomebrew's holo-docker image to create a proof of concept Bootc-based SteamOS image.
 
-<img width="2305" height="846" alt="image" src="https://github.com/user-attachments/assets/f496a2f4-0782-408c-b207-c7acdde2e5ac" />
+![SteamOS bootc being ran in a virtual machine](image.png)
 
-This is not completely functional yet! Seems that dbus has some trouble running in this environment. But its Arch! Its Bootc! Its cool!
-Now you can be even cooler and say that you are using Arch BTW while not having your system break all the time! :)
+This is by no means complete or intended for usage outside of a VM. Right now, the image includes a basic plasma session, flatpak and micro for a terminal-based text editor. More work will be done to try and get this image as close to SteamOS as possible.
 
 ## Building
 
-In order to get a running arch-bootc system you can run the following steps:
+In order to get a running steamos-bootc system you can run the following steps:
 ```shell
 just build-containerfile # This will build the containerfile and all the dependencies you need
 just generate-bootable-image # Generates a bootable image for you using bootc!
