@@ -1,0 +1,50 @@
+# Maintainer: Tulip Blossom (tulilirockz@proton.me)
+
+pkgname=composefs-rs-git
+_pkgname=composefs-rs
+pkgver=0.0.0.r0.ce28ee8
+pkgrel=1
+pkgdesc="Rust library for the composefs filesystem"
+arch=('x86_64' 'i686' 'armv6h' 'armv7h')
+url="https://github.com/containers/$_pkgname"
+_url="https://www.github.com/containers/$_pkgname"
+license=('MIT OR Apache-2.0')
+depends=(gcc-libs
+  zstd
+  glibc)
+makedepends=(cargo
+  git)
+provides=("composefs-rs=$pkgver")
+conflicts=('composefs-rs')
+source=("git+$_url")
+b2sums=('SKIP')
+
+prepare() {
+  install -Dpm0755 -t "${_pkgname}" ../module-setup.sh
+  install -Dpm0644 -t "${_pkgname}" ../composefs-setup-root.service
+  cd "$_pkgname"
+  cargo fetch --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+pkgver() {
+  cd "$_pkgname"
+  echo "0.0.0.r0.$(git log -1 --pretty=format:%h)"
+}
+
+build() {
+  cd "$_pkgname"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --release --bin composefs-setup-root
+}
+
+package() {
+  cd "$_pkgname"
+
+  install -Dpm0755 -t "${pkgdir}/usr/bin/" target/release/composefs-setup-root
+  # install -Dpm0755 -t "${pkgdir}/usr/bin/" target/release/cfsctl
+  install -Dpm0755 -t "${pkgdir}/usr/lib/dracut/modules.d/37composefs/" target/release/composefs-setup-root ./module-setup.sh
+  install -Dpm0644 -t "${pkgdir}/usr/lib/dracut/modules.d/37composefs/" ./composefs-setup-root.service
+  install -Dm644 LICENSE-APACHE -t "${pkgdir}/usr/share/licenses/$pkgname/"
+  install -Dm644 LICENSE-MIT -t "${pkgdir}/usr/share/licenses/$pkgname/"
+}

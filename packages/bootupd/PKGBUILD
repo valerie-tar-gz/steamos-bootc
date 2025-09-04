@@ -1,0 +1,47 @@
+# Maintainer: Tulip Blossom (tulilirockz@proton.me)
+
+pkgname=bootupd
+pkgver=0.2.29.r10.g42f5536
+pkgrel=1
+pkgdesc="Bootloader updater"
+arch=('x86_64' 'i686' 'armv6h' 'armv7h')
+url="https://docs.fedoraproject.org/en-US/fedora-coreos/bootloader-updates/"
+_repo_name="coreos-$pkgname"
+_upstream_url="https://github.com/coreos/$pkgname"
+_url="https://github.com/p5/$_repo_name"
+license=('Apache-2.0')
+depends=(gcc-libs
+  glibc)
+makedepends=(cargo
+  make
+  git)
+provides=("bootupd=$pkgver")
+source=("git+$_url#branch=sdboot-support")
+b2sums=('SKIP')
+
+prepare() {
+  cd "$_repo_name"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+pkgver() {
+  cd "$_repo_name"
+  git clone "${_upstream_url}" tmp &>/dev/null
+  pushd tmp &>/dev/null
+  git describe --long --tags --abbrev=7 --match="v*" HEAD |
+    sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+  popd &>/dev/null
+  rm -rf tmp &>/dev/null
+}
+
+build() {
+  cd "$_repo_name"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --release --frozen --features systemd-boot
+}
+
+package() {
+  cd "$_repo_name"
+  DESTDIR="${pkgdir}" make install
+}
