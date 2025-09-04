@@ -1,19 +1,13 @@
 FROM ghcr.io/valerie-tar-gz/holo-docker-complete:latest
 
+## FROM ghcr.io/steamdeckhomebrew/holo-base:latest
+
 COPY ./packages /packages
 
 COPY files/37composefs/ /usr/lib/dracut/modules.d/37composefs/
 COPY files/ostree/prepare-root.conf /usr/lib/ostree/prepare-root.conf
 
 ## Despite not being a build tool, flatpak is installed here as it depends on ostree. Because SteamOS's packages are fairly old, ostree needs to be compiled and replace the version pacman installs. If this was done before pacman installed ostree, it'd freak out.
-
-RUN pacman-key --init && \
-    pacman-key --populate archlinux && \
-    pacman-key --populate holo && \
-    pacman -Sy && \
-    comm -1 -2  <(pacman -Qdq | sort | sed "/^filesystem$/d") <(pacman -Qoq /usr/include/ | sort | sed "/^filesystem$/d") | pacman -S --noconfirm --asdeps - && \
-    pacman -S --noconfirm gcc make autoconf automake bison fakeroot flex m4 tpm2-tss && \
-    yes | pacman -Scc 
 
 RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson flatpak glibc && \
   pacman -S --clean --clean && \
