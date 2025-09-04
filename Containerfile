@@ -5,22 +5,8 @@ COPY ./packages /packages
 COPY files/37composefs/ /usr/lib/dracut/modules.d/37composefs/
 COPY files/ostree/prepare-root.conf /usr/lib/ostree/prepare-root.conf
 
-RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson && \
-  pacman -S --clean --clean && \
-  rm -rf /var/cache/pacman/pkg/*
-
-
-#RUN sudo pacman-key --init && sudo pacman-key --populate archlinux && cat /etc/pacman.conf && echo hi
-
-#RUN rm /etc/pacman.conf && cp /packages/pacman.conf /etc/pacman.conf
-
-#RUN sudo pacman-key --init && sudo pacman-key --populate archlinux
-
-#RUN pacman  /usr/lib/libgpgme.so.11 && pacman -Sy --noconfirm sudo base-devel extra/ostree core/gpgme && \
-#  pacman -S --clean --clean && \
-#  rm -rf /var/cache/pacman/pkg/*
-
-RUN pacman -Sy --noconfirm flatpak && \
+## Despite not being a build tool, flatpak is installed here as it depends on ostree. Because SteamOS's packages are fairly old, ostree needs to be compiled and replace the version pacman installs. If this was done before pacman installed ostree, it'd freak out.
+RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson flatpak && \
   pacman -S --clean --clean && \
   rm -rf /var/cache/pacman/pkg/*
 
@@ -74,6 +60,7 @@ RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
     ninja -C build && \
     ninja -C build install
 
+##If you would like a basic tty session, remove all packages below micro.
 RUN pacman -Sy --noconfirm \
   dracut \
   linux \
@@ -96,10 +83,11 @@ RUN pacman -Sy --noconfirm \
   glib2 \
   fastfetch \
   networkmanager \
+  shadow \
+  micro \
   sddm \
   sddm-kcm \
   steamdeck-kde-presets \
-  micro \
   plasma-activities \
   plasma-activities-stats \
   plasma-browser-integration \
@@ -121,11 +109,10 @@ RUN pacman -Sy --noconfirm \
   plasma5support \
   konsole \
   dolphin \
-  firefox \
-  shadow && \
+  firefox &&\
   pacman -S --clean --clean && \
   rm -rf /var/cache/pacman/pkg/*
-  
+
 RUN cp /usr/bin/bootc-initramfs-setup /usr/lib/dracut/modules.d/37composefs
 
 RUN mkdir /var/tmp/
