@@ -1,6 +1,6 @@
 # SteamOS Holo Bootc
 
-An extension on top of Tulip's experiments on Arch Linux and SteamDeckHomebrew's holo-docker image to create a proof of concept Bootc-based SteamOS image.
+An extension on top of Tulip's experiments on arch-bootc (To get Arch Linux working in a Bootc environment) and SteamDeckHomebrew's holo-docker image to create a proof of concept Bootc-based SteamOS image.
 
 ![SteamOS bootc being ran in a virtual machine](image.png)
 
