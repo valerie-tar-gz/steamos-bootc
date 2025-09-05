@@ -1,15 +1,6 @@
-FROM ghcr.io/valerie-tar-gz/holo-docker-complete:latest
+FROM ghcr.io/steamdeckhomebrew/holo-base:latest AS steamosbuilder
 
-## FROM ghcr.io/steamdeckhomebrew/holo-base:latest
-
-COPY ./packages /packages
-
-COPY files/37composefs/ /usr/lib/dracut/modules.d/37composefs/
-COPY files/ostree/prepare-root.conf /usr/lib/ostree/prepare-root.conf
-
-## Despite not being a build tool, flatpak is installed here as it depends on ostree. Because SteamOS's packages are fairly old, ostree needs to be compiled and replace the version pacman installs. If this was done before pacman installed ostree, it'd freak out.
-
-RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson flatpak glibc && \
+RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson glibc && \
   pacman -S --clean --clean && \
   rm -rf /var/cache/pacman/pkg/*
 
@@ -32,9 +23,32 @@ RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
         --without-soup \
         --with-dracut=yesbutnoconf && \
     make && \
-    make install
+    make DESTDIR=/build-directory install
+
+FROM ghcr.io/valerie-tar-gz/holo-docker-complete:latest AS steamos
+
+RUN pacman-key --init && \
+    pacman-key --populate archlinux && \
+    pacman-key --populate holo
+
+
+RUN pacman -Sy --noconfirm flatpak gcc glibc pkg-config sudo base-devel git fuse3 glib2-devel meson zstd openssl glib2 glib2-devel && \
+     pacman -S --clean --clean && \
+    rm -rf /var/cache/pacman/pkg/*
+
+COPY --from=steamosbuilder /build-directory /tmp/build-directory
+RUN cp -avf /tmp/build-directory/usr/lib/* /usr/lib && cp -avf /tmp/build-directory/usr/bin/* /usr/bin
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+#TO MOVE UP ###############################################################################
+RUN pacman -Sy --noconfirm pcre2 sysprof libsysprof-capture haskell-gi-gobject libffi zlib util-linux util-linux-libs xz curl gpgme libgpg-error composefs systemd-libs libarchive && \
+     pacman -S --clean --clean && \
+    rm -rf /var/cache/pacman/pkg/*
+
+ENV PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/share/pkgconfig
+RUN pkg-config --cflags ostree-1
+#TO MOVE UP ###############################################################################
 
 RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
     git clone https://github.com/bootc-dev/bootc.git bootc && \
@@ -62,6 +76,11 @@ RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
     meson setup build --prefix=/usr --default-library=shared -Dfuse=enabled && \
     ninja -C build && \
     ninja -C build install
+
+COPY ./packages /packages
+
+COPY files/37composefs/ /usr/lib/dracut/modules.d/37composefs/
+COPY files/ostree/prepare-root.conf /usr/lib/ostree/prepare-root.conf
 
 ##If you would like a basic tty session, remove all packages below micro.
 RUN pacman -Sy --noconfirm \
