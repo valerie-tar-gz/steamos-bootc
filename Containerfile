@@ -1,6 +1,6 @@
 FROM ghcr.io/steamdeckhomebrew/holo-base:latest AS steamosbuilder
 
-RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson glibc && \
+RUN pacman -Sy --noconfirm sudo base-devel git fuse3 glib2-devel meson glibc pkgconfig coreutils && \
   pacman -S --clean --clean && \
   rm -rf /var/cache/pacman/pkg/*
 
@@ -25,12 +25,19 @@ RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
     make && \
     make DESTDIR=/build-directory install
 
+RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
+    git clone https://github.com/containers/composefs.git composefs && \
+    cd composefs && \
+    git fetch --all && \
+    meson setup build --prefix=/usr --default-library=shared -Dfuse=enabled && \
+    ninja -C build && \
+    DESTDIR=/build-dir ninja -C build install
+
 FROM ghcr.io/valerie-tar-gz/holo-docker-complete:latest AS steamos
 
 RUN pacman-key --init && \
     pacman-key --populate archlinux && \
     pacman-key --populate holo
-
 
 RUN pacman -Sy --noconfirm flatpak gcc glibc pkg-config sudo base-devel git fuse3 glib2-devel meson zstd openssl glib2 glib2-devel && \
      pacman -S --clean --clean && \
@@ -38,11 +45,13 @@ RUN pacman -Sy --noconfirm flatpak gcc glibc pkg-config sudo base-devel git fuse
 
 COPY --from=steamosbuilder /build-directory /tmp/build-directory
 RUN cp -avf /tmp/build-directory/usr/lib/* /usr/lib && cp -avf /tmp/build-directory/usr/bin/* /usr/bin
+RUN cp -avf /tmp/build-directory/usr/lib/* /usr/lib && cp -avf /tmp/build-directory/usr/bin/* /usr/bin
+RUN cp -avf /tmp/build-directory/usr/lib/pkgconfig/ostree-1.pc /usr/lib/pkgconfig/ostree-1.pc
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 #TO MOVE UP ###############################################################################
-RUN pacman -Sy --noconfirm pcre2 sysprof libsysprof-capture haskell-gi-gobject libffi zlib util-linux util-linux-libs xz curl gpgme libgpg-error composefs systemd-libs libarchive && \
+RUN pacman -Sy --noconfirm libassuan libnghttp2 libnghttp3 libssh2 libpsl krb5 brotli libidn2 pcre2 sysprof libsysprof-capture haskell-gi-gobject libffi zlib util-linux util-linux-libs xz curl gpgme libgpg-error composefs systemd-libs libarchive && \
      pacman -S --clean --clean && \
     rm -rf /var/cache/pacman/pkg/*
 
@@ -69,24 +78,16 @@ RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
     install -Dpm0755 -t /usr/bin ./target/release/bootupd && \
     ln -s ./bootupd /usr/bin/bootupctl
 
-RUN --mount=type=tmpfs,dst=/tmp cd /tmp && \
-    git clone https://github.com/containers/composefs.git composefs && \
-    cd composefs && \
-    git fetch --all && \
-    meson setup build --prefix=/usr --default-library=shared -Dfuse=enabled && \
-    ninja -C build && \
-    ninja -C build install
-
 COPY ./packages /packages
 
 COPY files/37composefs/ /usr/lib/dracut/modules.d/37composefs/
 COPY files/ostree/prepare-root.conf /usr/lib/ostree/prepare-root.conf
 
+#  linux-firmware \
 ##If you would like a basic tty session, remove all packages below micro.
 RUN pacman -Sy --noconfirm \
   dracut \
   linux \
-  linux-firmware \
   systemd \
   btrfs-progs \
   e2fsprogs \
